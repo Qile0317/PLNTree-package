@@ -461,7 +461,7 @@ def batch_matrix_product(matrix, x):
     torch.Tensor
     """
     X = x.unsqueeze(2)
-    MX = (matrix.unsqueeze(0).expand(X.size(0), -1, -1) @ X).squeeze()
+    MX = (matrix.unsqueeze(0).expand(X.size(0), -1, -1) @ X).squeeze(-1)
     return MX
 
 

@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "plntree"
-version = "0.1.0"
+version = "0.1.1.dev0"
 description = "Package implementing PLN-Tree models and TaxaPLN augmentation."
 readme = "README.md"
 license = "MIT"
