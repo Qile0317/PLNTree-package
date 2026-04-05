@@ -81,14 +81,10 @@ class Tree:
         # Compute the depth of the hierarchy
         self.L = len(self.level_names)
 
-        # TODO: check correctness - this was modified from original!
         # Compute the number of nodes at a given layer of the hierarchy
-        # Use unique paths from root to each level (not just unique names),
-        # because the same name can appear under different parents.
         self.K = torch.zeros(self.L, dtype=torch.int).to(self.device)
         for layer in range(self.L):
-            paths = unique(self.decomposed_entities[:layer + 1], axis=1)
-            self.K[layer] = len(paths)
+            self.K[layer] = len(unique(self.decomposed_entities[layer])) # TODO I modified this - check if still correct
 
         # Compute the maximum width of the hierarchy
         self.K_max = int(self.K[-1])
