@@ -82,13 +82,12 @@ class Tree:
         self.L = len(self.level_names)
 
         # Compute the number of nodes at a given layer of the hierarchy
+        # (initialized as zeros, filled after clades are built to account for
+        # duplicate taxon names under different parents)
         self.K = torch.zeros(self.L, dtype=torch.int).to(self.device)
-        for layer in range(self.L):
-            self.K[layer] = len(unique(self.decomposed_entities[layer])) # TODO I modified this - check if still correct
 
-        # Compute the maximum width of the hierarchy
-        self.K_max = int(self.K[-1])
-        assert max(self.K) == self.K_max, "The width of the hierarchy can not decrease over the levels."
+        # K_max is the number of unique leaf-level entities (widest layer)
+        self.K_max = self.decomposed_entities.shape[1]
 
         # Compute the clades mask over the matrix embedding of the hierarchy (used in the ELBO computation)
         self.clades = np.zeros((self.L, self.K_max))
@@ -110,6 +109,12 @@ class Tree:
                 cursor += n_children[clade_index]
         self.clade_names += [unique(self.decomposed_entities[-1])]
         self.clades = torch.tensor(self.clades)
+
+        # Compute K from the clades array: count non-zero entries per layer
+        # (unique names can undercount when the same taxon appears under different parents)
+        for layer in range(self.L):
+            self.K[layer] = int((self.clades[layer] > 0).sum())
+        assert max(self.K) == self.K_max, "The width of the hierarchy can not decrease over the levels."
 
         # Mask of not only-child (used in latents modelling and ELBO computation)
         self.K_mask = np.zeros((self.L, self.K_max), dtype=bool)
