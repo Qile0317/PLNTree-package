@@ -464,8 +464,9 @@ def batch_matrix_product(matrix, x):
     -------
     torch.Tensor
     """
-    X = x.unsqueeze(2)
-    MX = (matrix.unsqueeze(0).expand(X.size(0), -1, -1) @ X).squeeze(-1)
+    # PATCH: replaced (matrix.expand(batch,...) @ x.unsqueeze(2)).squeeze(-1) with
+    # x @ matrix.T — functionally identical but avoids materializing a (batch, out, in) tensor,
+    MX = x @ matrix.T
     return MX
 
 
