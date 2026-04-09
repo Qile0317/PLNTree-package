@@ -212,8 +212,11 @@ class PLNTree(nn.Module):
                             data=torch.zeros(K_l).to(device=self.device, dtype=self.hierarchical_counts.dtype))
 
                     if self.latent_dynamic['markov_covariance']:
+                        # PATCH: when diagonal=True, output K_l values (diagonal only)
+                        # instead of K_l*(K_l+1)//2 (full Cholesky), avoiding ~2B wasted params
+                        omega_out_dim = K_l if self.latent_dynamic['diagonal'] else K_l * (K_l + 1) // 2
                         omega_l = nn.Sequential(
-                            DenseNeuralNetwork(K_l_prev, K_l_prev, K_l * (K_l + 1) // 2,
+                            DenseNeuralNetwork(K_l_prev, K_l_prev, omega_out_dim,
                                                self.latent_dynamic['n_layers'])
                         )
                         omega_l = CombinedNeuralNetworks(omega_l, None, None, None, pdm)
@@ -246,7 +249,9 @@ class PLNTree(nn.Module):
                             data=B_l.to(device=self.device, dtype=self.hierarchical_counts.dtype))
 
                     if self.latent_dynamic['markov_covariance']:
-                        cholesky_size = K_l * (K_l + 1) // 2
+                        # PATCH: when diagonal=True, output K_l values (diagonal only)
+                        # instead of K_l*(K_l+1)//2 (full Cholesky), avoiding wasted params
+                        cholesky_size = K_l if self.latent_dynamic['diagonal'] else K_l * (K_l + 1) // 2
                         omega_l_X = nn.Sequential(
                             DenseNeuralNetwork(K_l_prev, K_l_prev, cholesky_size, self.latent_dynamic['n_layers'])
                         )

@@ -149,6 +149,14 @@ class Cholesky(nn.Module):
         self.positive = nn.Softplus()
 
     def forward(self, L_vec):
+        # PATCH: when diagonal=True, accept a vector of length K (diagonal entries only)
+        # instead of K*(K+1)/2 (full Cholesky), so the upstream MLP can output K values
+        # instead of the full triangular vector. This fixes the bug where diagonal=True
+        # still required ~2B params because the MLP output dim was unchanged.
+        if self.diagonal:
+            # L_vec is (batch, K) — just the diagonal entries
+            L_diag = self.positive(L_vec)
+            return torch.diag_embed(L_diag, dim1=-2, dim2=-1)
         size = -0.5 + (1 + 8 * L_vec.size(1)) ** .5 / 2
         size = int(size)
         batch = L_vec.size(0)
@@ -162,8 +170,6 @@ class Cholesky(nn.Module):
         L_diag = self.positive(L_diag)
         # Embed the diagonal in a matrix
         L_diag = torch.diag_embed(L_diag, dim1=-2, dim2=-1)
-        if self.diagonal:
-            return L_diag
         L = L_diag + L_below
         # Triu to get the upper diagonal part out of the diagonal and set it to 0
         u, v = torch.triu_indices(size, size, offset=1)
