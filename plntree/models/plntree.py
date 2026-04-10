@@ -854,7 +854,11 @@ class PLNTree(nn.Module):
                 current_clade = 1
                 children_index = []
                 # We add a final zero to the clades to always have a stopping criterion that is satisfied, like a padding
-                padded_clades = torch.cat((self.tree.clades[level], torch.zeros(1)), dim=0).to(self.device)
+                # PATCH: build both tensors on self.device before concatenating. Previously torch.zeros(1) was created on
+                # CPU and torch.cat was called before .to(self.device), which raised a device-mismatch RuntimeError when
+                # self.tree.clades[level] was already on CUDA (e.g. when running benchmark.py with --device cuda).
+                clades_l = self.tree.clades[level].to(self.device)
+                padded_clades = torch.cat((clades_l, torch.zeros(1, device=self.device)), dim=0)
                 for i, clade in enumerate(padded_clades):
                     if clade != current_clade:
                         # If we have changed clade, then it's time to compute previous clade's counts
@@ -1160,7 +1164,11 @@ class PLNTree(nn.Module):
                 current_clade = 1
                 children_index = []
                 # We add a final zero to the clades to always have a stopping criterion that is satisfied, like a padding
-                padded_clades = torch.cat((self.tree.clades[level], torch.zeros(1)), dim=0).to(self.device)
+                # PATCH: build both tensors on self.device before concatenating. Previously torch.zeros(1) was created on
+                # CPU and torch.cat was called before .to(self.device), which raised a device-mismatch RuntimeError when
+                # self.tree.clades[level] was already on CUDA (e.g. when running benchmark.py with --device cuda).
+                clades_l = self.tree.clades[level].to(self.device)
+                padded_clades = torch.cat((clades_l, torch.zeros(1, device=self.device)), dim=0)
                 for i, clade in enumerate(padded_clades):
                     if clade != current_clade:
                         # If we have an only child, then it's taking the parent's value
